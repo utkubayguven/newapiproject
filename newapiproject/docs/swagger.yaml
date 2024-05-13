@@ -1,0 +1,283 @@
+info:
+  contact: {}
+paths:
+  /account/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get an account by ID
+      parameters:
+      - description: Account ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Account found
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Account not found
+          schema:
+            type: string
+      summary: Get an account by ID
+      tags:
+      - Account
+  /balance/{accountNumber}:
+    get:
+      consumes:
+      - application/json
+      description: Get the account balance
+      parameters:
+      - description: Account Number
+        in: path
+        name: accountNumber
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Balance inquiry successful
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Account not found
+          schema:
+            type: string
+      summary: Get the account balance
+      tags:
+      - Account
+  /deleteacc/{accountNumber}:
+    delete:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete an account
+      tags:
+      - Account
+  /deleteuser/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete a user
+      tags:
+      - User
+  /deposit:
+    post:
+      consumes:
+      - application/json
+      description: Deposit money into an account
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Deposit Amount
+        in: path
+        name: depositAmount
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deposit successful
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Account not found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Deposit money into an account
+      tags:
+      - Account
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Login to the application
+      parameters:
+      - description: Username
+        in: body
+        name: username
+        required: true
+        schema:
+          type: string
+      - description: PIN
+        in: body
+        name: pin
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Login to the application
+      tags:
+      - User
+  /pin-change/{id}:
+    post:
+      consumes:
+      - application/json
+      description: Change the user's PIN
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: PIN updated successfully
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Change the user's PIN
+      tags:
+      - User
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User created successfully
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Register a new user
+      tags:
+      - User
+  /withdrawal:
+    post:
+      consumes:
+      - application/json
+      description: Withdraw money from an account
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountID
+        required: true
+        type: integer
+      - description: Withdrawal Amount
+        in: path
+        name: withdrawalAmount
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Withdrawal successful
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Account not found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Withdraw money from an account
+      tags:
+      - Account
+swagger: "2.0"
