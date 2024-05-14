@@ -13,7 +13,7 @@ import (
 func InitDb() (*gorm.DB, error) {
 	dbURL := "postgres://root:root@localhost:5432/test_db"
 	DB, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)

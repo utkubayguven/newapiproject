@@ -30,15 +30,23 @@ func main() {
 
 	h := handlers.NewHandler(db)
 
-	r.POST("/register", h.Register)
-	r.POST("/login", h.Login)
-	r.GET("/balance/:accountNumber", h.GetAccountBalance)
-	r.POST("pin-change/:id", h.PinChange)
-	r.DELETE("deleteacc/:accountNumber", h.DeleteAccount)
-	r.DELETE("deleteuser/:id", h.DeleteUser)
-	r.POST("/withdrawal", h.Withdrawal)
-	r.POST("/deposit", h.Deposit)
-	r.GET("/account/:id", h.GetAccountByID)
+	userRoutes := r.Group("/user")
+	{
+		userRoutes.POST("/register", h.Register)
+		userRoutes.DELETE("/:id", h.DeleteUser)
+		userRoutes.POST("/login", h.Login)
+	}
+
+	// Account routes
+	accountRoutes := r.Group("/account")
+	{
+		accountRoutes.GET("/:id", h.GetAccountByID)
+		accountRoutes.GET("/balance/:accountNumber", h.GetAccountBalance)
+		accountRoutes.POST("/withdrawal", h.Withdrawal)
+		accountRoutes.POST("/deposit", h.Deposit)
+		accountRoutes.POST("/pin-change/:id", h.PinChange)
+		accountRoutes.DELETE("/deleteacc/:accountNumber", h.DeleteAccount)
+	}
 
 	protected := r.Group("/api")
 	protected.Use(middlewares.AuthenticateJWT())
