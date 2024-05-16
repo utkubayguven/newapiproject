@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"newapiprojet/database"
 	"newapiprojet/docs"
 	"newapiprojet/handlers"
@@ -9,12 +10,18 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-
+	"github.com/joho/godotenv"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func main() {
+	// .env dosyasını yükleyin
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
@@ -30,11 +37,13 @@ func main() {
 
 	h := handlers.NewHandler(db)
 
+	// JWT gizli anahtarının ayarlandığını kontrol et
 	secretKey := os.Getenv("JWT_SECRET")
 	if secretKey == "" {
 		fmt.Println("JWT gizli anahtarı yapılandırılmamış")
 		os.Exit(1)
 	}
+	fmt.Println("JWT Secret Key: ", secretKey) // Debugging için ekledik
 
 	userRoutes := r.Group("/user")
 	{
@@ -47,7 +56,6 @@ func main() {
 	accountRoutes := r.Group("/account")
 	{
 		accountRoutes.GET("/:id", h.GetAccountByID)
-		accountRoutes.GET("/balance/:accountNumber", h.GetAccountBalance)
 		accountRoutes.POST("/withdrawal", h.Withdrawal)
 		accountRoutes.POST("/deposit", h.Deposit)
 		accountRoutes.POST("/pin-change/:id", h.PinChange)
