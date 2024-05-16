@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"newapiprojet/models"
+	"os"
 	"regexp"
 	"time"
 
@@ -68,8 +69,6 @@ func (h Handler) Register(c *gin.Context) {
 	})
 }
 
-var jwtKey = []byte("utku123")
-
 // Login godoc
 // @Summary Login to the application
 // @Description Login to the application
@@ -106,14 +105,19 @@ func (h Handler) Login(c *gin.Context) {
 	}
 
 	// Create the JWT token
-	expirationTime := time.Now().Add(7 * 24 * time.Minute) // Token expires  7 days
+	expirationTime := time.Now().Add(7 * 24 * time.Hour) // Token expires in 7 days
 	claims := &jwt.StandardClaims{
 		ExpiresAt: expirationTime.Unix(),
 		Issuer:    "example.com",
 		Subject:   credentials.Username,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(jwtKey)
+	secretKey := os.Getenv("JWT_SECRET")
+	if secretKey == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "JWT gizli anahtarı yapılandırılmamış"})
+		return
+	}
+	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return

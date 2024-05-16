@@ -30,6 +30,12 @@ func main() {
 
 	h := handlers.NewHandler(db)
 
+	secretKey := os.Getenv("JWT_SECRET")
+	if secretKey == "" {
+		fmt.Println("JWT gizli anahtarı yapılandırılmamış")
+		os.Exit(1)
+	}
+
 	userRoutes := r.Group("/user")
 	{
 		userRoutes.POST("/register", h.Register)
@@ -48,9 +54,11 @@ func main() {
 		accountRoutes.DELETE("/deleteacc/:accountNumber", h.DeleteAccount)
 	}
 
-	protected := r.Group("/api")
+	protected := r.Group("/account/token")
 	protected.Use(middlewares.AuthenticateJWT())
-	// protected.GET("/balance", h.BalanceInquiry)
+	{
+		protected.GET("/balance/:accountNumber", h.GetAccountBalance)
+	}
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	r.Run()
 }
