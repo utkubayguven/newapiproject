@@ -51,6 +51,7 @@ func (h Handler) Deposit(c *gin.Context) {
 		DepositAmount: input.DepositAmount,
 	}
 
+	h.db.Save(&deposit)
 	h.db.Create(&deposit)
 	h.db.Save(&account)
 

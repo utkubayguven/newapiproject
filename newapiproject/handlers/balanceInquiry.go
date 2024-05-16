@@ -58,6 +58,9 @@ func (h Handler) GetAccountBalance(c *gin.Context) {
 		return
 	}
 
+	h.db.Create(&models.BalanceInquiry{AccountID: account.ID, CurrentBalance: account.Balance}) // Record the balance inquiry
+	h.db.Save(&account)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":       "Balance inquiry successful",
 		"accountNumber": account.ID,
