@@ -48,24 +48,25 @@ func main() {
 	userRoutes := r.Group("/user")
 	{
 		userRoutes.POST("/register", h.Register)
-		userRoutes.DELETE("/:id", h.DeleteUser)
 		userRoutes.POST("/login", h.Login)
 	}
 
 	// Account routes
-	accountRoutes := r.Group("/account")
-	{
-		accountRoutes.GET("/:id", h.GetAccountByID)
-		accountRoutes.POST("/withdrawal", h.Withdrawal)
-		accountRoutes.POST("/deposit", h.Deposit)
-		accountRoutes.POST("/pin-change/:id", h.PinChange)
-		accountRoutes.DELETE("/deleteacc/:accountNumber", h.DeleteAccount)
-	}
 
-	protected := r.Group("/account/token")
+	protected := r.Group("/account")
 	protected.Use(middlewares.AuthenticateJWT())
 	{
 		protected.GET("/balance/:accountNumber", h.GetAccountBalance)
+		protected.POST("/withdrawal", h.Withdrawal)
+		protected.POST("/deposit", h.Deposit)
+		protected.POST("/pin-change/:id", h.PinChange)
+		protected.DELETE("/deleteacc/:accountNumber", h.DeleteAccount)
+	}
+
+	protected2 := r.Group("/user")
+	protected2.Use(middlewares.AuthenticateJWT())
+	{
+		protected2.DELETE("/:id", h.DeleteUser)
 	}
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	r.Run()
