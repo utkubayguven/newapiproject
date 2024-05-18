@@ -82,8 +82,25 @@ func (h Handler) Register(c *gin.Context) {
 // @Failure 401 {string} string "Unauthorized"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /login [post]
+type Claims struct {
+	UserID uint `json:"user_id"`
+	jwt.StandardClaims
+}
+
+// Login godoc
+// @Summary Login user and generate token
+// @Description Login user and generate token
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param credentials body models.User true "User credentials"
+// @Success 200 {string} string "Token generated"
+// @Failure 400 {string} string "Bad Request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /login [post]
 func (h Handler) Login(c *gin.Context) {
-	var credentials models.User // Assuming you have a Credentials model with fields `Username` and `Password`
+	var credentials models.User
 
 	// Bind JSON from request body
 	if err := c.BindJSON(&credentials); err != nil {
@@ -106,10 +123,13 @@ func (h Handler) Login(c *gin.Context) {
 
 	// Create the JWT token
 	expirationTime := time.Now().Add(7 * 24 * time.Hour) // Token expires in 7 days
-	claims := &jwt.StandardClaims{
-		ExpiresAt: expirationTime.Unix(),
-		Issuer:    "example.com",
-		Subject:   credentials.Username,
+	claims := &Claims{
+		UserID: user.ID,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+			Issuer:    "example.com",
+			Subject:   credentials.Username,
+		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	secretKey := os.Getenv("JWT_SECRET")

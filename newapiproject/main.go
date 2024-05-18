@@ -57,8 +57,8 @@ func main() {
 	protected.Use(middlewares.AuthenticateJWT())
 	{
 		protected.GET("/balance/:accountNumber", h.GetAccountBalance)
-		protected.POST("/withdrawal", h.Withdrawal)
-		protected.POST("/deposit", h.Deposit)
+		protected.POST("/withdrawal", h.Withdrawal) // with json body parameter
+		protected.POST("/deposit", h.Deposit)       // with json body parameter
 		protected.POST("/pin-change/:id", h.PinChange)
 		protected.DELETE("/deleteacc/:accountNumber", h.DeleteAccount)
 	}

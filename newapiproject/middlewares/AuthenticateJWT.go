@@ -10,6 +10,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Claims struct {
+	UserID uint `json:"user_id"`
+	jwt.StandardClaims
+}
+
 func AuthenticateJWT() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		const BearerSchema = "Bearer "
@@ -35,7 +40,7 @@ func AuthenticateJWT() gin.HandlerFunc {
 			return
 		}
 
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("beklenmedik imzalama yöntemi: %v", token.Header["alg"])
 			}
@@ -48,8 +53,8 @@ func AuthenticateJWT() gin.HandlerFunc {
 			return
 		}
 
-		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			c.Set("userID", claims["user_id"])
+		if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+			c.Set("userID", claims.UserID)
 			c.Next()
 		} else {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Token geçerli değil"})

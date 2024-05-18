@@ -59,13 +59,16 @@ func (h Handler) GetAccountByID(c *gin.Context) {
 // @Tags Account
 // @Produce json
 // @Accept json
+// @Param accountNumber path int true "Account Number"
 // @Success 204 {string} string "No Content"
 // @Failure 400 {string} string "Bad Request"
+// @Failure 403 {string} string "Forbidden"
+// @Failure 404 {string} string "Account not found"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /deleteacc/{accountNumber} [delete]
 func (h Handler) DeleteAccount(c *gin.Context) {
-	var Account models.Account
-	accountNumber := c.Param("accountNumber") //
+	var account models.Account
+	accountNumber := c.Param("accountNumber")
 
 	if accountNumber == "" {
 		c.JSON(http.StatusBadRequest, "Hesap numarası boş")
@@ -78,7 +81,28 @@ func (h Handler) DeleteAccount(c *gin.Context) {
 		return
 	}
 
-	if err := h.db.Where("id = ?", id).Delete(&Account).Error; err != nil {
+	// JWT'den user_id'yi al
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Yetkilendirme hatası"})
+		return
+	}
+
+	// userID'yi uint olarak kontrol et
+	userIDUint, ok := userID.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID dönüştürme hatası"})
+		return
+	}
+
+	// Hesabın kullanıcıya ait olup olmadığını kontrol et
+	if err := h.db.Where("id = ? AND user_id = ?", id, userIDUint).First(&account).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "Account not found or access denied"})
+		return
+	}
+
+	// Hesabı sil
+	if err := h.db.Delete(&account).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}

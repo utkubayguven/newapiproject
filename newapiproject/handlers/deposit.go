@@ -28,14 +28,33 @@ func (h Handler) Deposit(c *gin.Context) {
 		DepositAmount int  `json:"depositAmount"`
 	}
 
-	// Bind JSON from the request body
 	if err := c.BindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// JWT'den user_id'yi al
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Yetkilendirme hatası"})
+		return
+	}
+
+	// userID'yi uint olarak kontrol et
+	userIDUint, ok := userID.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID dönüştürme hatası"})
+		return
+	}
+
+	// Hesap bilgilerini al ve userID'yi kontrol et
 	if err := h.db.Where("id = ?", input.AccountID).First(&account).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Account not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Hesap bulunamadı"})
+		return
+	}
+
+	if account.UserID != userIDUint {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Bu hesaba erişim izniniz yok"})
 		return
 	}
 
@@ -44,14 +63,12 @@ func (h Handler) Deposit(c *gin.Context) {
 		return
 	}
 
-	// Update the account balance
 	account.Balance += input.DepositAmount
 	deposit = models.Deposit{
 		AccountID:     input.AccountID,
 		DepositAmount: input.DepositAmount,
 	}
 
-	h.db.Save(&deposit)
 	h.db.Create(&deposit)
 	h.db.Save(&account)
 

@@ -8,29 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// func (h Handler) BalanceInquiry(c *gin.Context) {
-// 	userId, _ := c.Get("userID")
-// 	var account models.Account
-
-// 	if err := h.db.Where("user_id = ?", userId.(uint)).First(&account).Error; err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"message": "Account not found"})
-// 		return
-// 	}
-
-// 	newBalanceInquiry := models.BalanceInquiry{
-// 		AccountID:      account.ID,
-// 		CurrentBalance: account.Balance,
-// 	}
-
-// 	h.db.Create(&newBalanceInquiry) // Record the balance inquiry
-
-// 	c.JSON(http.StatusOK, gin.H{
-// 		"message":        "Balance inquiry successful",
-// 		"accountNumber":  account.ID,
-// 		"currentBalance": account.Balance,
-// 	})
-// }
-
 // GetAccountBalance godoc
 // @Summary Get the account balance
 // @Description Get the account balance
@@ -41,6 +18,7 @@ import (
 // @Success 200 {string} string "Balance inquiry successful"
 // @Failure 404 {string} string "Account not found"
 // @Failure 400 {string} string "Bad Request"
+// @Failure 403 {string} string "Forbidden"
 // @Router /balance/{accountNumber} [get]
 func (h Handler) GetAccountBalance(c *gin.Context) {
 	accountNumber := c.Param("accountNumber") // Extract account number from parameters
@@ -53,8 +31,23 @@ func (h Handler) GetAccountBalance(c *gin.Context) {
 		return
 	}
 
-	if err := h.db.Where("id = ?", id).First(&account).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"message": "Account not found"})
+	// JWT'den user_id'yi al
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Yetkilendirme hatası"})
+		return
+	}
+
+	// userID'yi uint olarak kontrol et
+	userIDUint, ok := userID.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID dönüştürme hatası"})
+		return
+	}
+
+	// Check if the account belongs to the authenticated user
+	if err := h.db.Where("id = ? AND user_id = ?", id, userIDUint).First(&account).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "Account not found or access denied"})
 		return
 	}
 
@@ -66,5 +59,4 @@ func (h Handler) GetAccountBalance(c *gin.Context) {
 		"accountNumber": account.ID,
 		"balance":       account.Balance,
 	})
-
 }
