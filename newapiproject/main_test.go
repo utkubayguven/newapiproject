@@ -1,11 +1,18 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"testing"
 
 	"newapiprojet/database"
+	"newapiprojet/handlers"
 	"newapiprojet/models"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -110,4 +117,91 @@ func TestRegister(t *testing.T) {
 	cleanDatabase(db)
 }
 
-////////////////////////////////////////////
+// //////////////////////////////////////////
+// setupRouter sets up the Gin router with the required routes and middleware
+
+func TestLogin(t *testing.T) {
+	// Set up in-memory SQLite database
+	db, err := database.InitDb()
+	if err != nil {
+		t.Fatalf("failed to connect to the database: %v", err)
+	}
+	db.AutoMigrate(&models.User{})
+
+	// Create test user
+	testUser := models.User{
+		Username:    "testuser",
+		FirstName:   "Test",
+		LastName:    "User",
+		PhoneNumber: "1234567890",
+		PIN:         "password",
+	}
+	db.Create(&testUser)
+
+	// Set JWT secret environment variable
+	os.Setenv("JWT_SECRET", "utku123")
+
+	// Create handler
+	handler := handlers.NewHandler(db)
+
+	// Create Gin router
+	router := gin.Default()
+	router.POST("/login", handler.Login)
+
+	t.Run("successful login", func(t *testing.T) {
+		// Create a valid login request
+		loginReq := map[string]string{"username": "testuser", "pin": "password"}
+		reqBody, _ := json.Marshal(loginReq)
+		req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		if status := rr.Code; status != http.StatusOK {
+			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+		}
+
+		// Print the response body for debugging
+		t.Logf("Response Body: %s", rr.Body.String())
+
+		var response map[string]string
+		err := json.Unmarshal(rr.Body.Bytes(), &response)
+		if err != nil {
+			t.Fatalf("could not parse response: %v", err)
+		}
+
+		if _, ok := response["token"]; !ok {
+			t.Errorf("expected token in response, got %v", response)
+		}
+	})
+
+	t.Run("invalid credentials", func(t *testing.T) {
+		// Create an invalid login request
+		loginReq := map[string]string{"username": "testuser", "pin": "wrongpassword"}
+		reqBody, _ := json.Marshal(loginReq)
+		req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		if status := rr.Code; status != http.StatusUnauthorized {
+			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusUnauthorized)
+		}
+
+		// Print the response body for debugging
+		t.Logf("Response Body: %s", rr.Body.String())
+
+		var response map[string]string
+		err := json.Unmarshal(rr.Body.Bytes(), &response)
+		if err != nil {
+			t.Fatalf("could not parse response: %v", err)
+		}
+
+		expected := "Invalid credentials"
+		if response["error"] != expected {
+			t.Errorf("handler returned unexpected body: got %v want %v", response["error"], expected)
+		}
+	})
+}
