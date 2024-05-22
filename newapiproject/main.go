@@ -52,7 +52,7 @@ func main() {
 	}
 
 	// Account routes
-
+	// config yapısı api portu  gunluk kac ıstek alınacagı gibi ayarları yapmamızı saglarconfıg dosyayı json  singelton yapısı kullanıldı
 	protected := r.Group("/account")
 	protected.Use(middlewares.AuthenticateJWT())
 	{
