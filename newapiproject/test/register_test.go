@@ -56,9 +56,6 @@ func TestRegister(t *testing.T) {
 	mock.ExpectQuery(`INSERT INTO "users" \("created_at","updated_at","deleted_at","username","first_name","last_name","phone_number","pin"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8\) RETURNING "id"`).
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), user.Username, user.FirstName, user.LastName, user.PhoneNumber, user.PIN).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
-	mock.ExpectExec(`INSERT INTO "accounts" \("created_at","updated_at","deleted_at","user_id","balance"\) VALUES \(\$1,\$2,\$3,\$4,\$5\)`).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), 1, 1000).
-		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
 	// Create a valid register request
@@ -72,4 +69,22 @@ func TestRegister(t *testing.T) {
 	// Assertions
 	assert.Equal(t, http.StatusCreated, rr.Code)
 	assert.NoError(t, mock.ExpectationsWereMet())
+
+	// Check the response body
+	var response map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	if err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	// Check the response body
+	userResponse, ok := response["user"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("failed to get user from response")
+	}
+	assert.Equal(t, user.Username, userResponse["username"])
+	assert.Equal(t, user.FirstName, userResponse["first_name"])
+	assert.Equal(t, user.LastName, userResponse["last_name"])
+	assert.Equal(t, user.PhoneNumber, userResponse["phone_number"])
+	assert.Equal(t, user.PIN, userResponse["pin"])
 }
