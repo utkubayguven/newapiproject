@@ -8,6 +8,7 @@
 - Switched to Linux environment
 - Ubuntu environment set up
 - Docker and Go installed on Ubuntu
+- Project set up on Ubuntu
 
 ### Fixed
 - Go staticcheck error fixed
