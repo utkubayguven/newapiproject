@@ -7,7 +7,7 @@
 ### Changed
 - Switched to Linux environment
 - Ubuntu environment set up
-- Docker installed on Ubuntu
+- Docker and Go installed on Ubuntu
 
 ### Fixed
 - Go staticcheck error fixed
