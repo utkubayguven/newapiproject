@@ -36,6 +36,7 @@ func main() {
 	}
 	mw := middlewares.NewNewapiprojetMiddlewares()
 	r.Use(mw.LogMiddleware())
+	r.Use(middlewares.RequestLimitMiddleware())
 
 	docs.SwaggerInfo.BasePath = ""
 
