@@ -1,0 +1,4 @@
+{
+    "apiPort": 8080,
+    "max_request_per_day": 1000
+}
