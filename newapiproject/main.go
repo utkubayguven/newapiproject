@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"newapiprojet/config"
 	"newapiprojet/database"
 	"newapiprojet/docs"
 	"newapiprojet/handlers"
@@ -21,6 +22,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error loading .env file")
 	}
+
+	// Config dosyasını yükleyin
+	conf := config.GetConfig()
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
@@ -68,6 +72,7 @@ func main() {
 	{
 		protected2.DELETE("/:id", h.DeleteUser)
 	}
+
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-	r.Run()
+	r.Run(fmt.Sprintf(":%d", conf.APIPort)) // API portunu config dosyasından alın
 }
