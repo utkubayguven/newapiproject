@@ -32,6 +32,7 @@ services:
       - db
     volumes:
       - ./.env:/app/.env
+      - ./config/config.json:/app/config/config.json 
 
 volumes:
   pg-data:
