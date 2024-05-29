@@ -30,7 +30,7 @@
 ## [1.0.1] - 2024-05-29
 ### Added
 - Configurations for Docker Compose to set up both the application and the PostgreSQL database.
-- Added environment variables for database configuration in `docker-compose.yml`.
+- Added Dockerfile for app-container
 
 ### Changed
 - Refactored Dockerfile to copy `config.json` correctly.
