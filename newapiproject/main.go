@@ -22,6 +22,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error loading .env file")
 	}
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+
+	dbConnectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		dbHost, dbPort, dbUser, dbPassword, dbName)
 
 	// Config dosyasını yükleyin
 	conf := config.GetConfig()
@@ -29,7 +37,7 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
-	db, err := database.InitDb()
+	db, err := database.InitDb(dbConnectionString)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -58,6 +66,9 @@ func main() {
 
 	// Account routes
 	// config yapısı api portu  gunluk kac ıstek alınacagı gibi ayarları yapmamızı saglarconfıg dosyayı json  singelton yapısı kullanıldı
+	// apiyi dockerla ayagı kaldırma ve kapatma islemleri yapılacak
+	// etcd
+	// kubernetes
 	protected := r.Group("/account")
 	protected.Use(middlewares.AuthenticateJWT())
 	{

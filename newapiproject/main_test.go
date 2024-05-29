@@ -1,6 +1,5 @@
 package main
 
-//*******************************************************Integration Test *************************************************************
 import (
 	"bytes"
 	"encoding/json"
@@ -24,8 +23,11 @@ func cleanDatabase(db *gorm.DB) {
 }
 
 func TestRegister(t *testing.T) {
+	// Set up database connection string
+	dbConnectionString := "host=localhost port=5432 user=root password=root dbname=test_db sslmode=disable"
+
 	// Open a connection to the database
-	db, err := database.InitDb()
+	db, err := database.InitDb(dbConnectionString)
 	if err != nil {
 		t.Fatalf("failed to connect to the database: %v", err)
 	}
@@ -122,8 +124,10 @@ func TestRegister(t *testing.T) {
 // setupRouter sets up the Gin router with the required routes and middleware
 
 func TestLogin(t *testing.T) {
-	// Set up in-memory SQLite database
-	db, err := database.InitDb()
+	dbConnectionString := "host=localhost port=5432 user=root password=root dbname=test_db sslmode=disable"
+
+	// Open a connection to the database
+	db, err := database.InitDb(dbConnectionString)
 	if err != nil {
 		t.Fatalf("failed to connect to the database: %v", err)
 	}

@@ -10,9 +10,8 @@ import (
 )
 
 // InitDb initializes the database connection and runs migrations
-func InitDb() (*gorm.DB, error) {
-	dbURL := "postgres://root:root@localhost:5432/test_db"
-	DB, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{
+func InitDb(dbConnectionString string) (*gorm.DB, error) {
+	DB, err := gorm.Open(postgres.Open(dbConnectionString), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
