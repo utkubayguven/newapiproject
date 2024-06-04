@@ -42,3 +42,20 @@
 - Addressed issue with database connection refusal in Docker setup.
 
 
+## [1.0.1] - 2024-05-31
+### Added
+- Added infra0 infra1 infra2 etcd node 
+
+### Fixed
+- Some error with creating node2 and node3
+
+
+
+## [1.0.1] - 2024-06-04
+
+
+
+
+
+
+
