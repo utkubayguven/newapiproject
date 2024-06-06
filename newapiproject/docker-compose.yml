@@ -34,5 +34,8 @@ services:
       - ./.env:/app/.env
       - ./config/config.json:/app/config/config.json 
 
+    # etcd1 :
+    # container_name: etcd1
+
 volumes:
   pg-data:
