@@ -15,7 +15,7 @@
 
 
 
-## [1.0.1] - 2024-05-28
+## [1.0.0] - 2024-05-28
 ### Added
 - Config package for handling API configuration and request limits
 - Singleton pattern for loading and accessing configuration
@@ -27,7 +27,7 @@
 
 
 
-## [1.0.1] - 2024-05-29
+## [1.0.0] - 2024-05-29
 ### Added
 - Configurations for Docker Compose to set up both the application and the PostgreSQL database.
 - Added Dockerfile for app-container
@@ -42,7 +42,7 @@
 - Addressed issue with database connection refusal in Docker setup.
 
 
-## [1.0.1] - 2024-05-31
+## [1.0.0] - 2024-05-31
 ### Added
 - Added infra0 infra1 infra2 etcd node 
 
@@ -51,7 +51,7 @@
 
 
 
-## [1.0.1] - 2024-06-04
+## [1.0.0] - 2024-06-04
 
 ### Changed
 - Updated the etcd cluster setup based on the latest conversation and findings
@@ -67,7 +67,7 @@
 
 
 
-## [1.0.1] - 2024-06-05
+## [1.0.0] - 2024-06-05
 
 ### Added
 - Configurations for a local etcd cluster setup
@@ -84,7 +84,7 @@
 
 
 
-## [1.0.1] - 2024-06-06
+## [1.0.0] - 2024-06-06
 
 ### Added
 - Added Docker Compose setup for etcd with three containers: node1, node2, and node3
