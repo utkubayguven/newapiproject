@@ -1,90 +1,84 @@
 package main
 
-// import (
-// 	"fmt"
-// 	"log"
-// 	"newapiprojet/config"
-// 	"newapiprojet/database"
-// 	"newapiprojet/docs"
-// 	"newapiprojet/handlers"
-// 	"newapiprojet/middlewares"
-// 	"os"
+import (
+	"fmt"
+	"log"
+	"newapiprojet/config"
+	"newapiprojet/database"
+	"newapiprojet/handlers"
+	"newapiprojet/middlewares"
+	"os"
 
-// 	"github.com/gin-gonic/gin"
-// 	"github.com/joho/godotenv"
-// 	swaggerfiles "github.com/swaggo/files"
-// 	ginSwagger "github.com/swaggo/gin-swagger"
-// )
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+)
 
-// func main() {
-// 	// .env dosyasını yükleyin
-// 	err := godotenv.Load()
-// 	if err != nil {
-// 		log.Fatalf("Error loading .env file")
-// 	}
-// 	dbHost := os.Getenv("DB_HOST")
-// 	dbPort := os.Getenv("DB_PORT")
-// 	dbUser := os.Getenv("DB_USER")
-// 	dbPassword := os.Getenv("DB_PASSWORD")
-// 	dbName := os.Getenv("DB_NAME")
+func main() {
+	// .env dosyasını yükleyin
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
 
-// 	dbConnectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-// 		dbHost, dbPort, dbUser, dbPassword, dbName)
+	// etcd endpoint'lerini belirleyin
+	endpoints := []string{
+		"http://etcd1:2379",
+		"http://etcd2:2378",
+		"http://etcd3:2377",
+	}
 
-// 	// Config dosyasını yükleyin
-// 	conf := config.GetConfig()
+	// etcd client'ı başlatın
+	etcdClient, err := database.InitEtcd(endpoints)
+	if err != nil {
+		log.Fatalf("Error initializing etcd client: %v", err)
+	}
 
-// 	gin.SetMode(gin.ReleaseMode)
-// 	r := gin.Default()
+	// Config dosyasını yükleyin
+	conf := config.GetConfig()
 
-// 	db, err := database.InitDb(dbConnectionString)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		os.Exit(1)
-// 	}
-// 	mw := middlewares.NewNewapiprojetMiddlewares()
-// 	r.Use(mw.LogMiddleware())
-// 	r.Use(middlewares.RequestLimitMiddleware())
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.Default()
 
-// 	docs.SwaggerInfo.BasePath = ""
+	mw := middlewares.NewNewapiprojetMiddlewares()
+	r.Use(mw.LogMiddleware())
+	r.Use(middlewares.RequestLimitMiddleware())
 
-// 	h := handlers.NewHandler(db)
+	h := handlers.NewHandler(etcdClient.Client)
 
-// 	// JWT gizli anahtarının ayarlandığını kontrol et
-// 	secretKey := os.Getenv("JWT_SECRET")
-// 	if secretKey == "" {
-// 		fmt.Println("JWT gizli anahtarı yapılandırılmamış")
-// 		os.Exit(1)
-// 	}
-// 	fmt.Println("JWT Secret Key: ", secretKey) // Debugging için ekledik
+	// JWT gizli anahtarının ayarlandığını kontrol et
+	secretKey := os.Getenv("JWT_SECRET")
+	if secretKey == "" {
+		fmt.Println("JWT secret key is not configured")
+		os.Exit(1)
+	}
+	fmt.Println("JWT Secret Key: ", secretKey) // Debugging için ekledik
 
-// 	userRoutes := r.Group("/user")
-// 	{
-// 		userRoutes.POST("/register", h.Register)
-// 		userRoutes.POST("/login", h.Login)
-// 	}
+	userRoutes := r.Group("/user")
+	{
+		userRoutes.POST("/register", h.Register)
+		// userRoutes.POST("/login", h.Login)
 
-// 	// Account routes
-// 	// config yapısı api portu  gunluk kac ıstek alınacagı gibi ayarları yapmamızı saglarconfıg dosyayı json  singelton yapısı kullanıldı
-// 	// apiyi dockerla ayagı kaldırma ve kapatma islemleri yapılacak
-// 	// etcd
-// 	// kubernetes
-// 	protected := r.Group("/account")
-// 	protected.Use(middlewares.AuthenticateJWT())
-// 	{
-// 		protected.GET("/balance/:accountNumber", h.GetAccountBalance)
-// 		protected.POST("/withdrawal", h.Withdrawal) // with json body parameter
-// 		protected.POST("/deposit", h.Deposit)       // with json body parameter
-// 		protected.POST("/pin-change/:id", h.PinChange)
-// 		protected.DELETE("/deleteacc/:accountNumber", h.DeleteAccount)
-// 	}
+	}
 
-// 	protected2 := r.Group("/user")
-// 	protected2.Use(middlewares.AuthenticateJWT())
-// 	{
-// 		protected2.DELETE("/:id", h.DeleteUser)
-// 	}
+	// Account routes
+	protected := r.Group("/account")
+	protected.Use(middlewares.AuthenticateJWT())
+	{
+		// protected.GET("/balance/:accountNumber", h.GetAccountBalance)
+		// protected.POST("/withdrawal", h.Withdrawal)
+		// protected.POST("/deposit", h.Deposit)
+		// protected.POST("/pin-change/:id", h.PinChange)
+		// protected.DELETE("/deleteacc/:accountNumber", h.DeleteAccount)
+	}
 
-// 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-// 	r.Run(fmt.Sprintf(":%d", conf.APIPort)) // API portunu config dosyasından alın
-// }
+	// protected2 := r.Group("/user")
+	// protected2.Use(middlewares.AuthenticateJWT())
+	// {
+	// 	protected2.DELETE("/:id", h.DeleteUser)
+	// }
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	r.Run(fmt.Sprintf(":%d", conf.APIPort)) // API portunu config dosyasından alın
+}
