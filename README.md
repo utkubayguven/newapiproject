@@ -1,2 +1,0 @@
-# newapiproject
-with go
