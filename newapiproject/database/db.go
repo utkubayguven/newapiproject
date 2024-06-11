@@ -2,27 +2,24 @@ package database
 
 import (
 	"fmt"
-	"newapiprojet/models"
+	"time"
 
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
-// InitDb initializes the database connection and runs migrations
-func InitDb(dbConnectionString string) (*gorm.DB, error) {
-	DB, err := gorm.Open(postgres.Open(dbConnectionString), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
+type EtcdClient struct {
+	Client *clientv3.Client
+}
+
+// InitEtcd initializes the etcd connection
+func InitEtcd(endpoints []string) (*EtcdClient, error) {
+	client, err := clientv3.New(clientv3.Config{
+		Endpoints:   endpoints,
+		DialTimeout: 5 * time.Second,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
+		return nil, fmt.Errorf("failed to connect to etcd: %w", err)
 	}
 
-	// Run migrations
-	err = DB.AutoMigrate(&models.User{}, &models.Account{}, &models.Deposit{}, &models.Withdrawal{}, &models.BalanceInquiry{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to run migrations: %w", err)
-	}
-
-	return DB, nil
+	return &EtcdClient{Client: client}, nil
 }

@@ -1,14 +1,14 @@
 package handlers
 
 import (
-	"gorm.io/gorm"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 type Handler struct {
-	db *gorm.DB
+	client *clientv3.Client
 }
 
-func NewHandler(db *gorm.DB) *Handler {
-	h := Handler{db}
+func NewHandler(client *clientv3.Client) *Handler {
+	h := Handler{client: client}
 	return &h
 }

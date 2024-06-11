@@ -1,66 +1,58 @@
-// models/models.go
-
 package models
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 // User Model
 type User struct {
-	gorm.Model
-	Username    string `gorm:"unique;not null"`
-	FirstName   string `gorm:"not null"`
-	LastName    string `gorm:"not null"`
-	PhoneNumber string `gorm:"unique;not null"`
-	PIN         string `gorm:"not null"`
+	ID          uint   `json:"id"`
+	Username    string `json:"username"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	PhoneNumber string `json:"phone_number"`
+	PIN         string `json:"pin"`
 }
 
 // Account Model
 type Account struct {
-	gorm.Model
-	UserID           uint             `gorm:"not null"` // Kullanıcı ID'sine referans
-	Balance          int              `gorm:"default:1000"`
-	Deposits         []Deposit        `gorm:"foreignKey:AccountID"` // Bir hesaba birden fazla para yatırma işlemi yapılabilir
-	Withdrawals      []Withdrawal     `gorm:"foreignKey:AccountID"` // Bir hesaptan birden fazla para çekme işlemi olabilir
-	BalanceInquiries []BalanceInquiry `gorm:"foreignKey:AccountID"` // Bir hesaba ait birden fazla bakiye sorgulama kaydı olabilir
+	ID               uint             `json:"id"`
+	UserID           uint             `json:"user_id"`
+	Balance          int              `json:"balance"`
+	Deposits         []Deposit        `json:"deposits"`
+	Withdrawals      []Withdrawal     `json:"withdrawals"`
+	BalanceInquiries []BalanceInquiry `json:"balance_inquiries"`
 }
 
 // Deposit Model
 type Deposit struct {
-	gorm.Model
-	AccountID     uint    `gorm:"not null"` // Hesap ID'sine referans
-	Account       Account `gorm:"foreignKey:AccountID;references:ID"`
-	DepositAmount int
-	DepositDate   time.Time `gorm:"default:current_timestamp"`
+	ID            uint      `json:"id"`
+	AccountID     uint      `json:"account_id"`
+	DepositAmount int       `json:"deposit_amount"`
+	DepositDate   time.Time `json:"deposit_date"`
 }
 
 // Withdrawal Model
 type Withdrawal struct {
-	gorm.Model
-	AccountID        uint    `gorm:"not null"` // Hesap ID'sine referans
-	Account          Account `gorm:"foreignKey:AccountID;references:ID"`
-	WithdrawalAmount int
-	WithdrawalDate   time.Time `gorm:"default:current_timestamp"`
+	ID               uint      `json:"id"`
+	AccountID        uint      `json:"account_id"`
+	WithdrawalAmount int       `json:"withdrawal_amount"`
+	WithdrawalDate   time.Time `json:"withdrawal_date"`
 }
 
 // BalanceInquiry Model
 type BalanceInquiry struct {
-	gorm.Model
-	AccountID      uint    `gorm:"not null"` // Hesap ID'sine referans
-	Account        Account `gorm:"foreignKey:AccountID;references:ID"`
-	CurrentBalance int
-	InquiryDate    time.Time `gorm:"default:current_timestamp"`
+	ID             uint      `json:"id"`
+	AccountID      uint      `json:"account_id"`
+	CurrentBalance int       `json:"current_balance"`
+	InquiryDate    time.Time `json:"inquiry_date"`
 }
 
 // PinChange Model
 type PinChange struct {
-	gorm.Model
-	UserID     uint      `gorm:"not null"`          // Kullanıcı ID'sine referans
-	User       User      `gorm:"foreignKey:UserID"` // Belongs-to ilişki tanımı
-	OldPIN     string    `gorm:"not null"`
-	NewPIN     string    `gorm:"not null"`
-	ChangeDate time.Time `gorm:"default:current_timestamp"`
+	ID         uint      `json:"id"`
+	UserID     uint      `json:"user_id"`
+	OldPIN     string    `json:"old_pin"`
+	NewPIN     string    `json:"new_pin"`
+	ChangeDate time.Time `json:"change_date"`
 }
