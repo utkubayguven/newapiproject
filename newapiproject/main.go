@@ -28,11 +28,16 @@ func main() {
 		"http://etcd2:2378",
 		"http://etcd3:2377",
 	}
-
+	// her handlerın ıcıne clıentı cagır adaptor pattern
+	//raft uygulaması
 	// etcd client'ı başlatın
 	etcdClient, err := database.InitEtcd(endpoints)
 	if err != nil {
 		log.Fatalf("Error initializing etcd client: %v", err)
+	}
+
+	if etcdClient == nil {
+		log.Fatalf("etcdClient is nil after initialization")
 	}
 
 	// Config dosyasını yükleyin

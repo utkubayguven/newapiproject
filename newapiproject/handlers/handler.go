@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"log"
+
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
@@ -9,6 +11,8 @@ type Handler struct {
 }
 
 func NewHandler(client *clientv3.Client) *Handler {
-	h := Handler{client: client}
-	return &h
+	if client == nil {
+		log.Fatalf("etcd client is nil")
+	}
+	return &Handler{client: client}
 }

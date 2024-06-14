@@ -14,7 +14,7 @@ type EtcdClient struct {
 // InitEtcd initializes the etcd connection
 func InitEtcd(endpoints []string) (*EtcdClient, error) {
 	client, err := clientv3.New(clientv3.Config{
-		Endpoints:   endpoints,
+		Endpoints:   []string{"http://etcd1:2379", "http://etcd2:2378", "http://etcd3:2377"},
 		DialTimeout: 5 * time.Second,
 	})
 	if err != nil {

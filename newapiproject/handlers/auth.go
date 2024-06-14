@@ -1,122 +1,170 @@
 package handlers
 
-// import (
-// 	"net/http"
-// 	"newapiprojet/models"
-// 	"os"
-// 	"regexp"
-// 	"time"
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"newapiprojet/models"
+	"regexp"
+	"strings"
 
-// 	"github.com/dgrijalva/jwt-go"
-// 	"github.com/gin-gonic/gin"
-// )
+	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
 
-// // Register godoc
-// // @Summary Register a new user
-// // @Description Register a new user
-// // @Tags User
-// // @Accept json
-// // @Produce json
-// // @Success 201 "User created successfully"
-// // @Failure 400 {string} string "Bad Request"
-// // @Failure 500 {string} string "Internal Server Error"
-// // @Router /register [post]
-// func (h Handler) Register(c *gin.Context) {
-// 	var user models.User
+// // etcd client
+// var etcdClient *clientv3.Client// get clıent tarzı fonksıyon olustur cunku timeouta dusuyor
 
-// 	// Bind JSON from the request body to the user struct
-// 	if err := c.BindJSON(&user); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-// 	// Validate the phone number has exactly 11 digits
-// 	matchPhone, _ := regexp.MatchString(`^\d{11}$`, user.PhoneNumber)
-// 	if !matchPhone {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Phone must be exactly 11 digits"})
-// 		return
-// 	}
-
-// 	// Validate the PIN has exactly 4 digits
-// 	matchPin, _ := regexp.MatchString(`^\d{4}$`, user.PIN)
-// 	if !matchPin {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "PIN must be exactly 4 digits"})
-// 		return
-// 	}
-
-// 	// Create the user in the database
-// 	if err := h.db.Create(&user).Error; err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to create user: " + err.Error()})
-// 		return
-// 	}
-
-// 	// Create an account for the newly registered user
-// 	account := models.Account{
-// 		UserID:  user.ID, // Set UserID to the newly created user's ID
-// 		Balance: 1000,    // Default balance
-// 	}
-
-// 	// Create the account in the database
-// 	if err := h.db.Create(&account).Error; err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to create account: " + err.Error()})
-// 		return
-// 	}
-
-// 	// Return the newly created user and account information
-// 	c.JSON(http.StatusCreated, gin.H{
-// 		"user":    user,
-// 		"account": account,
+// // InitEtcd initializes the etcd client
+// func InitEtcd() {
+// 	var err error
+// 	etcdClient, err = clientv3.New(clientv3.Config{
+// 		Endpoints:   []string{"http://etcd1:2379", "http://etcd2:2378", "http://etcd3:2377"},
+// 		DialTimeout: 5 * time.Second,
 // 	})
+// 	if err != nil {
+// 		panic(err)
+// 	}
 // }
 
-// // Login godoc
-// // @Summary Login to the application
-// // @Description Login to the application
-// // @Tags User
-// // @Accept json
-// // @Produce json
-// // @Param username body string true "Username"
-// // @Param pin body string true "PIN"
-// // @Success 200 {string} string "Token"
-// // @Failure 400 {string} string "Bad Request"
-// // @Failure 401 {string} string "Unauthorized"
-// // @Failure 500 {string} string "Internal Server Error"
-// // @Router /login [post]
-// type Claims struct {
-// 	UserID uint `json:"user_id"`
-// 	jwt.StandardClaims
-// }
+// Register godoc
+// @Summary Register a new user
+// @Description Register a new user
+// @Tags User
+// @Accept json
+// @Produce json
+// @Success 201 {string} string "User created successfully"
+// @Failure 400 {string} string "Bad Request"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /register [post]
+func (h *Handler) Register(c *gin.Context) {
+	var user models.User
 
-// // Login godoc
-// // @Summary Login user and generate token
-// // @Description Login user and generate token
-// // @Tags Auth
-// // @Accept json
-// // @Produce json
-// // @Param credentials body models.User true "User credentials"
-// // @Success 200 {string} string "Token generated"
-// // @Failure 400 {string} string "Bad Request"
-// // @Failure 401 {string} string "Unauthorized"
-// // @Failure 500 {string} string "Internal Server Error"
-// // @Router /login [post]
+	// Bind JSON from the request body to the user struct
+	if err := c.BindJSON(&user); err != nil {
+		fmt.Println("Error binding JSON:", err) // Log the error
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Debug: Print the user data
+	fmt.Printf("Received user data: %+v\n", user)
+
+	// Trim any leading/trailing whitespace from the phone number
+	user.PhoneNumber = strings.TrimSpace(user.PhoneNumber)
+
+	// Validate the phone number has exactly 11 digits
+	matchPhone, _ := regexp.MatchString(`^\d{11}$`, user.PhoneNumber)
+	if !matchPhone {
+		fmt.Println("Invalid phone number:", user.PhoneNumber) // Log the invalid phone number
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Phone must be exactly 11 digits"})
+		return
+	}
+
+	// Validate the PIN has exactly 4 digits
+	matchPin, _ := regexp.MatchString(`^\d{4}$`, user.PIN)
+	if !matchPin {
+		fmt.Println("Invalid PIN:", user.PIN) // Log the invalid PIN
+		c.JSON(http.StatusBadRequest, gin.H{"error": "PIN must be exactly 4 digits"})
+		return
+	}
+
+	// Generate a new UUID for the user
+	user.ID = uuid.New()
+
+	// Convert user struct to JSON
+	userData, err := json.Marshal(user)
+	if err != nil {
+		fmt.Println("Error marshaling user data:", err) // Log the error
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to marshal user data: " + err.Error()})
+		return
+	}
+
+	// Store user data in etcd
+	_, err = h.client.Put(context.Background(), "users/"+user.Username, string(userData))
+	if err != nil {
+		fmt.Println("Error storing user data in etcd:", err) // Log the error
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to store user data in etcd: " + err.Error()})
+		return
+	}
+
+	// Create an account for the newly registered user
+	account := models.Account{
+		UserID:  user.ID, // Set UserID to the newly created user's ID
+		Balance: 1000,    // Default balance
+	}
+
+	// Convert account struct to JSON
+	accountData, err := json.Marshal(account)
+	if err != nil {
+		fmt.Println("Error marshaling account data:", err) // Log the error
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to marshal account data: " + err.Error()})
+		return
+	}
+
+	// Store account data in etcd
+	_, err = h.client.Put(context.Background(), "accounts/"+user.Username, string(accountData))
+	if err != nil {
+		fmt.Println("Error storing account data in etcd:", err) // Log the error
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to store account data in etcd: " + err.Error()})
+		return
+	}
+
+	// Return the newly created user and account information
+	c.JSON(http.StatusCreated, gin.H{
+		"user":    user,
+		"account": account,
+	})
+}
+
+type Claims struct {
+	UserID uuid.UUID `json:"user_id"`
+	jwt.StandardClaims
+}
+
+// Login godoc
+// @Summary Login user and generate token
+// @Description Login user and generate token
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param credentials body models.User true "User credentials"
+// @Success 200 {string} string "Token generated"
+// @Failure 400 {string} string "Bad Request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /login [post]
 // func (h Handler) Login(c *gin.Context) {
 // 	var credentials models.User
 
 // 	// Bind JSON from request body
 // 	if err := c.BindJSON(&credentials); err != nil {
+// 		fmt.Println("Error binding JSON:", err) // Log the error
 // 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 // 		return
 // 	}
 
-// 	// Check if the user exists
-// 	var user models.User
-// 	if err := h.db.Where("username = ?", credentials.Username).First(&user).Error; err != nil {
+// 	// Get user data from etcd
+// 	resp, err := etcdClient.Get(context.Background(), "users/"+credentials.Username)
+// 	if err != nil || resp.Count == 0 {
+// 		fmt.Println("Invalid credentials or error retrieving user data:", err) // Log the error
 // 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 // 		return
 // 	}
 
-// 	// Check if the password is correct
+// 	var user models.User
+// 	err = json.Unmarshal(resp.Kvs[0].Value, &user)
+// 	if err != nil {
+// 		fmt.Println("Error unmarshaling user data:", err) // Log the error
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to unmarshal user data: " + err.Error()})
+// 		return
+// 	}
+
+// 	// Check if the PIN is correct
 // 	if user.PIN != credentials.PIN {
+// 		fmt.Println("Invalid PIN:", credentials.PIN) // Log the invalid PIN
 // 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 // 		return
 // 	}
@@ -134,7 +182,7 @@ package handlers
 // 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 // 	secretKey := os.Getenv("JWT_SECRET")
 // 	if secretKey == "" {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "JWT gizli anahtarı yapılandırılmamış"})
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "JWT secret key not configured"})
 // 		return
 // 	}
 // 	tokenString, err := token.SignedString([]byte(secretKey))

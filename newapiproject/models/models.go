@@ -2,22 +2,23 @@ package models
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
-// User Model
 type User struct {
-	ID          uint   `json:"id"`
-	Username    string `json:"username"`
-	FirstName   string `json:"first_name"`
-	LastName    string `json:"last_name"`
-	PhoneNumber string `json:"phone_number"`
-	PIN         string `json:"pin"`
+	ID          uuid.UUID `json:"-"`
+	Username    string    `json:"username"`
+	FirstName   string    `json:"first_name"`
+	LastName    string    `json:"last_name"`
+	PhoneNumber string    `json:"phone_number"`
+	PIN         string    `json:"pin"`
 }
 
 // Account Model
 type Account struct {
 	ID               uint             `json:"id"`
-	UserID           uint             `json:"user_id"`
+	UserID           uuid.UUID        `json:"user_id"`
 	Balance          int              `json:"balance"`
 	Deposits         []Deposit        `json:"deposits"`
 	Withdrawals      []Withdrawal     `json:"withdrawals"`
