@@ -29,16 +29,6 @@ import (
 // 	}
 // }
 
-// Register godoc
-// @Summary Register a new user
-// @Description Register a new user
-// @Tags User
-// @Accept json
-// @Produce json
-// @Success 201 {string} string "User created successfully"
-// @Failure 400 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /register [post]
 func (h *Handler) Register(c *gin.Context) {
 	var user models.User
 
@@ -82,8 +72,16 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
+	// Get etcd client
+	client, err := h.getClient()
+	if err != nil {
+		fmt.Println("Error getting etcd client:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to get etcd client: " + err.Error()})
+		return
+	}
+
 	// Store user data in etcd
-	_, err = h.client.Put(context.Background(), "users/"+user.Username, string(userData))
+	_, err = client.Put(context.Background(), "users/"+user.Username, string(userData))
 	if err != nil {
 		fmt.Println("Error storing user data in etcd:", err) // Log the error
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to store user data in etcd: " + err.Error()})
@@ -105,7 +103,7 @@ func (h *Handler) Register(c *gin.Context) {
 	}
 
 	// Store account data in etcd
-	_, err = h.client.Put(context.Background(), "accounts/"+user.Username, string(accountData))
+	_, err = client.Put(context.Background(), "accounts/"+user.Username, string(accountData))
 	if err != nil {
 		fmt.Println("Error storing account data in etcd:", err) // Log the error
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to store account data in etcd: " + err.Error()})
@@ -119,6 +117,7 @@ func (h *Handler) Register(c *gin.Context) {
 	})
 }
 
+// Claims struct for JWT
 type Claims struct {
 	UserID uuid.UUID `json:"user_id"`
 	jwt.StandardClaims

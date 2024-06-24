@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"newapiprojet/config"
-	"newapiprojet/database"
 	"newapiprojet/handlers"
 	"newapiprojet/middlewares"
 	"os"
@@ -22,7 +21,6 @@ func main() {
 		log.Fatalf("Error loading .env file")
 	}
 
-	// etcd endpoint'lerini belirleyin
 	endpoints := []string{
 		"http://etcd1:2379",
 		"http://etcd2:2378",
@@ -30,17 +28,17 @@ func main() {
 	}
 	// her handlerın ıcıne clıentı cagır adaptor pattern
 	//raft uygulaması
-	// etcd client'ı başlatın
-	etcdClient, err := database.InitEtcd(endpoints)
-	if err != nil {
-		log.Fatalf("Error initializing etcd client: %v", err)
-	}
 
-	if etcdClient == nil {
-		log.Fatalf("etcdClient is nil after initialization")
-	}
+	// client, err := database.GetClient(endpoints)
+	// if err != nil {
+	// 	log.Fatalf("Error initializing etcd client: %v", err)
+	// }
 
-	// Config dosyasını yükleyin
+	// err = database.TestPutGet(client)
+	// if err != nil {
+	// 	log.Fatalf("Error in etcd PUT/GET test: %v", err)
+	// }
+
 	conf := config.GetConfig()
 
 	gin.SetMode(gin.ReleaseMode)
@@ -50,15 +48,15 @@ func main() {
 	r.Use(mw.LogMiddleware())
 	r.Use(middlewares.RequestLimitMiddleware())
 
-	h := handlers.NewHandler(etcdClient.Client)
+	h := handlers.NewHandler(endpoints)
 
-	// JWT gizli anahtarının ayarlandığını kontrol et
+	// User routes
 	secretKey := os.Getenv("JWT_SECRET")
 	if secretKey == "" {
 		fmt.Println("JWT secret key is not configured")
 		os.Exit(1)
 	}
-	fmt.Println("JWT Secret Key: ", secretKey) // Debugging için ekledik
+	fmt.Println("JWT Secret Key: ", secretKey)
 
 	userRoutes := r.Group("/user")
 	{
@@ -85,5 +83,5 @@ func main() {
 	// }
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-	r.Run(fmt.Sprintf(":%d", conf.APIPort)) // API portunu config dosyasından alın
+	r.Run(fmt.Sprintf(":%d", conf.APIPort)) // listen and serve on
 }

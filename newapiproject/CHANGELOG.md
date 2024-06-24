@@ -1,4 +1,4 @@
-# Changelog
+bridge# Changelog
 
 ## [1.0.0] - 2024-05-27
 ### Added
@@ -100,7 +100,22 @@
 
 
 
-## [1.0.1] - 2024-06-07
+## [2.0.0] - 2024-06-24
+
+### Added
+- Added database package with functions for initializing and managing the ETCD client.
+- Introduced database.InitEtcd(endpoints []string) to start the ETCD client.
+- Implemented database.GetClient(endpoints []string) to return the existing ETCD client or create a new one.
+- Created database.TestPutGet(client *clientv3.Client) to perform read and write tests on ETCD.
+
+### Changed
+- Updated Docker network configuration to ensure all ETCD containers are connected to the same network using the bridge driver.
+- Manually connected ETCD containers to the etcd-net network to resolve connection issues.
+
+### Fixed
+- Resolved network configuration issues by ensuring all ETCD containers are connected to the same Docker network (etcd-net).
+- Improved logging and error handling within handlers.Register to provide detailed error messages and user data logging.
+- Ensured proper initialization and connection handling of the ETCD client in the main application.
 
 
 
