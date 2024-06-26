@@ -61,7 +61,7 @@ func main() {
 	userRoutes := r.Group("/user")
 	{
 		userRoutes.POST("/register", h.Register)
-		// userRoutes.POST("/login", h.Login)
+		userRoutes.POST("/login", h.Login)
 
 	}
 

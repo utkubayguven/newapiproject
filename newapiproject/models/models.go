@@ -17,7 +17,7 @@ type User struct {
 
 // Account Model
 type Account struct {
-	ID               uint             `json:"id"`
+	ID               uuid.UUID        `json:"id"`
 	UserID           uuid.UUID        `json:"user_id"`
 	Balance          int              `json:"balance"`
 	Deposits         []Deposit        `json:"deposits"`
