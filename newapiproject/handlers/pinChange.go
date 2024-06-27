@@ -1,93 +1,117 @@
 package handlers
 
-// import (
-// 	"net/http"
-// 	"newapiprojet/models"
-// 	"regexp"
-// 	"strconv"
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"newapiprojet/models"
+	"regexp"
+	"strconv"
+	"time"
 
-// 	"github.com/gin-gonic/gin"
-// )
+	"github.com/gin-gonic/gin"
+)
 
-// // PinChange godoc
-// // @Summary Change the user's PIN
-// // @Description Change the user's PIN
-// // @Tags User
-// // @Accept json
-// // @Produce json
-// // @Param id path int true "User ID"
-// // @Param input body struct{OldPIN string `json:"oldPIN";NewPIN string `json:"newPIN"`} true "Old and New PIN"
-// // @Success 200 {string} string "PIN updated successfully"
-// // @Failure 400 {string} string "Bad Request"
-// // @Failure 404 {string} string "User not found"
-// // @Failure 403 {string} string "Forbidden"
-// // @Failure 500 {string} string "Internal Server Error"
-// // @Router /pin-change/{id} [post]
-// func (h Handler) PinChange(c *gin.Context) {
-// 	var user models.User
-// 	var input struct { // Define a struct to bind the input JSON
-// 		OldPIN string `json:"oldPIN"`
-// 		NewPIN string `json:"newPIN"`
-// 	}
-// 	idParam := c.Param("id")
+// PinChange godoc
+// @Summary Change the user's PIN
+// @Description Change the user's PIN
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Param input body struct{OldPIN string `json:"oldPIN";NewPIN string `json:"newPIN"`} true "Old and New PIN"
+// @Success 200 {string} string "PIN updated successfully"
+// @Failure 400 {string} string "Bad Request"
+// @Failure 404 {string} string "User not found"
+// @Failure 403 {string} string "Forbidden"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /pin-change/{id} [post]
+func (h Handler) PinChange(c *gin.Context) {
+	var input struct {
+		OldPIN string `json:"oldPIN"`
+		NewPIN string `json:"newPIN"`
+	}
+	idParam := c.Param("id")
 
-// 	id, err := strconv.Atoi(idParam)
-// 	if err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
-// 		return
-// 	}
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
+		return
+	}
 
-// 	// JWT'den user_id'yi al
-// 	userID, exists := c.Get("userID")
-// 	if !exists {
-// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Yetkilendirme hatası"})
-// 		return
-// 	}
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Yetkilendirme hatası"})
+		return
+	}
 
-// 	// userID'yi uint olarak kontrol et
-// 	userIDUint, ok := userID.(uint)
-// 	if !ok {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID dönüştürme hatası"})
-// 		return
-// 	}
+	userIDString, ok := userID.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID dönüştürme hatası"})
+		return
+	}
 
-// 	// Kullanıcı kimliği eşleşmezse, işlemi iptal et
-// 	if uint(id) != userIDUint {
-// 		c.JSON(http.StatusForbidden, gin.H{"error": "Bu hesaba erişim izniniz yok"})
-// 		return
-// 	}
+	if strconv.Itoa(id) != userIDString {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Bu hesaba erişim izniniz yok"})
+		return
+	}
 
-// 	// Retrieve user from the database
-// 	if err := h.db.First(&user, id).Error; err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-// 		return
-// 	}
+	client, err := h.getClient()
+	if err != nil {
+		fmt.Println("Error getting etcd client:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to get etcd client: " + err.Error()})
+		return
+	}
 
-// 	// Bind the JSON payload to the input struct
-// 	if err := c.BindJSON(&input); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-// 	// Validate the NewPIN is exactly 4 digits
-// 	matchPin, _ := regexp.MatchString(`^\d{4}$`, input.NewPIN)
-// 	if !matchPin {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "PIN must be exactly 4 digits"})
-// 		return
-// 	}
+	resp, err := client.Get(ctx, "users/"+userIDString)
+	if err != nil || resp.Count == 0 {
+		fmt.Println("User not found or error retrieving user data:", err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
 
-// 	// Check if the provided OldPIN matches the current PIN
-// 	if input.OldPIN != user.PIN {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "OldPIN does not match the current PIN"})
-// 		return
-// 	}
+	var user models.User
+	err = json.Unmarshal(resp.Kvs[0].Value, &user)
+	if err != nil {
+		fmt.Println("Error unmarshaling user data:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to unmarshal user data: " + err.Error()})
+		return
+	}
 
-// 	// Update the user's PIN in the database
-// 	user.PIN = input.NewPIN
-// 	if err := h.db.Save(&user).Error; err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to update PIN"})
-// 		return
-// 	}
+	if err := c.BindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-// 	c.JSON(http.StatusOK, gin.H{"message": "PIN updated successfully"})
-// }
+	matchPin, _ := regexp.MatchString(`^\d{4}$`, input.NewPIN)
+	if !matchPin {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "PIN must be exactly 4 digits"})
+		return
+	}
+
+	if input.OldPIN != user.PIN {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "OldPIN does not match the current PIN"})
+		return
+	}
+
+	user.PIN = input.NewPIN
+	userData, err := json.Marshal(user)
+	if err != nil {
+		fmt.Println("Error marshaling user data:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to marshal user data: " + err.Error()})
+		return
+	}
+
+	_, err = client.Put(ctx, "users/"+userIDString, string(userData))
+	if err != nil {
+		fmt.Println("Error updating user data in etcd:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to update user data in etcd: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "PIN updated successfully"})
+}

@@ -16,7 +16,18 @@ import (
 	"github.com/google/uuid"
 )
 
-// Register handler
+// Register godoc
+// @Summary Register a new user
+// @Description Register a new user with username, first name, last name, phone number, and PIN
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param user body models.User true "User details"
+// @Success 201 {object} gin.H "User and Account created successfully"
+// @Failure 400 {string} string "Bad Request"
+// @Failure 409 {string} string "Username already exists"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /user/register [post]
 func (h *Handler) Register(c *gin.Context) {
 	var user models.User
 
@@ -119,6 +130,18 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
+// Login godoc
+// @Summary Login user and generate token
+// @Description Login user and generate token
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param credentials body models.User true "User credentials"
+// @Success 200 {string} string "Token generated"
+// @Failure 400 {string} string "Bad Request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /user/login [post]
 func (h *Handler) Login(c *gin.Context) {
 	var credentials models.User
 

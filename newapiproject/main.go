@@ -20,7 +20,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error loading .env file")
 	}
-
+	//cli tool
 	endpoints := []string{
 		"http://etcd1:2379",
 		"http://etcd2:2378",
@@ -28,16 +28,6 @@ func main() {
 	}
 	// her handlerın ıcıne clıentı cagır adaptor pattern
 	//raft uygulaması
-
-	// client, err := database.GetClient(endpoints)
-	// if err != nil {
-	// 	log.Fatalf("Error initializing etcd client: %v", err)
-	// }
-
-	// err = database.TestPutGet(client)
-	// if err != nil {
-	// 	log.Fatalf("Error in etcd PUT/GET test: %v", err)
-	// }
 
 	conf := config.GetConfig()
 
@@ -69,18 +59,18 @@ func main() {
 	protected := r.Group("/account")
 	protected.Use(middlewares.AuthenticateJWT())
 	{
-		// protected.GET("/balance/:accountNumber", h.GetAccountBalance)
-		// protected.POST("/withdrawal", h.Withdrawal)
-		// protected.POST("/deposit", h.Deposit)
-		// protected.POST("/pin-change/:id", h.PinChange)
-		// protected.DELETE("/deleteacc/:accountNumber", h.DeleteAccount)
+		protected.GET("/balance/:accountNumber", h.GetAccountBalance)
+		protected.POST("/withdrawal", h.Withdrawal)
+		protected.POST("/deposit", h.Deposit)
+		protected.POST("/pin-change/:id", h.PinChange)
+		protected.DELETE("/deleteacc/:id", h.DeleteAccountByID)
 	}
 
-	// protected2 := r.Group("/user")
-	// protected2.Use(middlewares.AuthenticateJWT())
-	// {
-	// 	protected2.DELETE("/:id", h.DeleteUser)
-	// }
+	protected2 := r.Group("/user")
+	protected2.Use(middlewares.AuthenticateJWT())
+	{
+		protected2.DELETE("/:id", h.DeleteUser)
+	}
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	r.Run(fmt.Sprintf(":%d", conf.APIPort)) // listen and serve on

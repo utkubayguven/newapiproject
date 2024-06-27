@@ -27,32 +27,32 @@ type Account struct {
 
 // Deposit Model
 type Deposit struct {
-	ID            uint      `json:"id"`
-	AccountID     uint      `json:"account_id"`
+	ID            uuid.UUID `json:"id"`
+	AccountID     uuid.UUID `json:"account_id"`
 	DepositAmount int       `json:"deposit_amount"`
 	DepositDate   time.Time `json:"deposit_date"`
 }
 
 // Withdrawal Model
 type Withdrawal struct {
-	ID               uint      `json:"id"`
-	AccountID        uint      `json:"account_id"`
+	ID               uuid.UUID `json:"id"`
+	AccountID        uuid.UUID `json:"account_id"`
 	WithdrawalAmount int       `json:"withdrawal_amount"`
 	WithdrawalDate   time.Time `json:"withdrawal_date"`
 }
 
 // BalanceInquiry Model
 type BalanceInquiry struct {
-	ID             uint      `json:"id"`
-	AccountID      uint      `json:"account_id"`
+	ID             uuid.UUID `json:"id"`
+	AccountID      uuid.UUID `json:"account_id"`
 	CurrentBalance int       `json:"current_balance"`
 	InquiryDate    time.Time `json:"inquiry_date"`
 }
 
 // PinChange Model
 type PinChange struct {
-	ID         uint      `json:"id"`
-	UserID     uint      `json:"user_id"`
+	ID         uuid.UUID `json:"id"`
+	UserID     uuid.UUID `json:"user_id"`
 	OldPIN     string    `json:"old_pin"`
 	NewPIN     string    `json:"new_pin"`
 	ChangeDate time.Time `json:"change_date"`
