@@ -8,10 +8,11 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type Claims struct {
-	UserID uint `json:"user_id"`
+	UserID uuid.UUID `json:"user_id"`
 	jwt.StandardClaims
 }
 
@@ -54,7 +55,7 @@ func AuthenticateJWT() gin.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-			c.Set("userID", claims.UserID)
+			c.Set("userID", claims.UserID) // userID'yi UUID olarak ayarla
 			c.Next()
 		} else {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Token geçerli değil"})

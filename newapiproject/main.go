@@ -69,7 +69,7 @@ func main() {
 	protected2 := r.Group("/user")
 	protected2.Use(middlewares.AuthenticateJWT())
 	{
-		protected2.DELETE("/:id", h.DeleteUser)
+		protected2.DELETE("delete/:id", h.DeleteUser)
 	}
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))

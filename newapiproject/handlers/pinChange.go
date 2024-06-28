@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"newapiprojet/models"
 	"regexp"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // PinChange godoc
@@ -19,7 +19,7 @@ import (
 // @Tags User
 // @Accept json
 // @Produce json
-// @Param id path int true "User ID"
+// @Param id path string true "User ID"
 // @Param input body struct{OldPIN string `json:"oldPIN";NewPIN string `json:"newPIN"`} true "Old and New PIN"
 // @Success 200 {string} string "PIN updated successfully"
 // @Failure 400 {string} string "Bad Request"
@@ -34,25 +34,22 @@ func (h Handler) PinChange(c *gin.Context) {
 	}
 	idParam := c.Param("id")
 
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
-		return
-	}
-
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Yetkilendirme hatası"})
 		return
 	}
 
-	userIDString, ok := userID.(string)
+	userIDUUID, ok := userID.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID dönüştürme hatası"})
 		return
 	}
+	userIDString := userIDUUID.String()
 
-	if strconv.Itoa(id) != userIDString {
+	fmt.Printf("idParam: %s, userIDString: %s\n", idParam, userIDString)
+
+	if idParam != userIDString {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Bu hesaba erişim izniniz yok"})
 		return
 	}
