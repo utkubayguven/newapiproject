@@ -41,18 +41,10 @@ func (h Handler) GetAccountBalance(c *gin.Context) {
 		return
 	}
 
-	// userID'yi string olarak kontrol et
-	userIDString, ok := userID.(string)
+	// userID'yi UUID olarak kontrol et
+	userIDUUID, ok := userID.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID dönüştürme hatası"})
-		return
-	}
-
-	// etcd client'i al
-	client, err := h.getClient()
-	if err != nil {
-		fmt.Println("Error getting etcd client:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to get etcd client: " + err.Error()})
 		return
 	}
 
@@ -60,15 +52,15 @@ func (h Handler) GetAccountBalance(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := client.Get(ctx, "accounts/"+accountUUID.String())
-	if err != nil || resp.Count == 0 {
+	resp, err := h.db.Get(ctx, "accounts/"+accountUUID.String())
+	if err != nil || resp == nil {
 		fmt.Println("Account not found or error retrieving account data:", err)
 		c.JSON(http.StatusNotFound, gin.H{"message": "Account not found"})
 		return
 	}
 
 	var account models.Account
-	err = json.Unmarshal(resp.Kvs[0].Value, &account)
+	err = json.Unmarshal(resp, &account)
 	if err != nil {
 		fmt.Println("Error unmarshaling account data:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to unmarshal account data: " + err.Error()})
@@ -76,7 +68,7 @@ func (h Handler) GetAccountBalance(c *gin.Context) {
 	}
 
 	// Hesap bilgilerini al ve userID'yi kontrol et
-	if account.UserID.String() != userIDString {
+	if account.UserID != userIDUUID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Bu hesaba erişim izniniz yok"})
 		return
 	}
@@ -95,7 +87,7 @@ func (h Handler) GetAccountBalance(c *gin.Context) {
 		return
 	}
 
-	_, err = client.Put(ctx, "balance_inquiries/"+accountUUID.String(), string(inquiryData))
+	err = h.db.Put(ctx, "balance_inquiries/"+accountUUID.String(), inquiryData)
 	if err != nil {
 		fmt.Println("Error storing balance inquiry data in etcd:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to store balance inquiry data in etcd: " + err.Error()})

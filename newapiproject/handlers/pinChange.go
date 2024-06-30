@@ -27,7 +27,7 @@ import (
 // @Failure 403 {string} string "Forbidden"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /pin-change/{id} [post]
-func (h Handler) PinChange(c *gin.Context) {
+func (h *Handler) PinChange(c *gin.Context) {
 	var input struct {
 		OldPIN string `json:"oldPIN"`
 		NewPIN string `json:"newPIN"`
@@ -54,25 +54,18 @@ func (h Handler) PinChange(c *gin.Context) {
 		return
 	}
 
-	client, err := h.getClient()
-	if err != nil {
-		fmt.Println("Error getting etcd client:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to get etcd client: " + err.Error()})
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := client.Get(ctx, "users/"+userIDString)
-	if err != nil || resp.Count == 0 {
+	data, err := h.db.Get(ctx, "users/"+userIDString)
+	if err != nil || data == nil {
 		fmt.Println("User not found or error retrieving user data:", err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
 	var user models.User
-	err = json.Unmarshal(resp.Kvs[0].Value, &user)
+	err = json.Unmarshal(data, &user)
 	if err != nil {
 		fmt.Println("Error unmarshaling user data:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to unmarshal user data: " + err.Error()})
@@ -103,7 +96,7 @@ func (h Handler) PinChange(c *gin.Context) {
 		return
 	}
 
-	_, err = client.Put(ctx, "users/"+userIDString, string(userData))
+	err = h.db.Put(ctx, "users/"+userIDString, userData)
 	if err != nil {
 		fmt.Println("Error updating user data in etcd:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to update user data in etcd: " + err.Error()})

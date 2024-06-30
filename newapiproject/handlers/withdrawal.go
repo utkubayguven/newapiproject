@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"newapiprojet/models"
 	"time"
@@ -48,24 +47,17 @@ func (h *Handler) Withdrawal(c *gin.Context) {
 		return
 	}
 
-	client, err := h.getClient()
-	if err != nil {
-		fmt.Println("Error getting etcd client:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to get etcd client: " + err.Error()})
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := client.Get(ctx, "accounts/"+input.AccountID.String())
-	if err != nil || resp.Count == 0 {
+	resp, err := h.db.Get(ctx, "accounts/"+input.AccountID.String())
+	if err != nil || resp == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Account not found"})
 		return
 	}
 
 	var account models.Account
-	err = json.Unmarshal(resp.Kvs[0].Value, &account)
+	err = json.Unmarshal(resp, &account)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to unmarshal account data"})
 		return
@@ -89,7 +81,7 @@ func (h *Handler) Withdrawal(c *gin.Context) {
 		return
 	}
 
-	_, err = client.Put(context.Background(), "accounts/"+account.ID.String(), string(accountData))
+	err = h.db.Put(context.Background(), "accounts/"+account.ID.String(), accountData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to update account data"})
 		return
@@ -108,7 +100,7 @@ func (h *Handler) Withdrawal(c *gin.Context) {
 		return
 	}
 
-	_, err = client.Put(context.Background(), "withdrawals/"+withdrawal.ID.String(), string(withdrawalData))
+	err = h.db.Put(context.Background(), "withdrawals/"+withdrawal.ID.String(), withdrawalData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to store withdrawal data"})
 		return

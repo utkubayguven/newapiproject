@@ -43,3 +43,7 @@ func (e *EtcdClient) Post(ctx context.Context, key string, value []byte) error {
 	_, err := e.client.Put(ctx, key, string(value))
 	return err
 }
+
+func (e *EtcdClient) Close() error {
+	return e.client.Close()
+}

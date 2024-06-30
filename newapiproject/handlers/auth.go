@@ -64,31 +64,22 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
-	// Get etcd client
-	client, err := h.getClient()
-	if err != nil {
-		fmt.Println("Error getting etcd client:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to get etcd client: " + err.Error()})
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := client.Get(ctx, "users/"+user.Username)
+	resp, err := h.db.Get(ctx, "users/"+user.Username)
 	if err != nil {
 		fmt.Println("Error checking for existing username:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to check username: " + err.Error()})
 		return
 	}
-	if resp.Count > 0 {
+	if resp != nil {
 		fmt.Println("Username already exists:", user.Username)
 		c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
 		return
 	}
 
-	// Store user data in etcd
-	_, err = client.Put(context.Background(), "users/"+user.Username, string(userData))
+	err = h.db.Put(context.Background(), "users/"+user.Username, userData)
 	if err != nil {
 		fmt.Println("Error storing user data in etcd:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to store user data in etcd: " + err.Error()})
@@ -103,7 +94,6 @@ func (h *Handler) Register(c *gin.Context) {
 		Balance: 1000,
 	}
 
-	// Convert account struct to JSON
 	accountData, err := json.Marshal(account)
 	if err != nil {
 		fmt.Println("Error marshaling account data:", err)
@@ -111,8 +101,7 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
-	// Store account data in etcd
-	_, err = client.Put(context.Background(), "accounts/"+user.Username, string(accountData))
+	err = h.db.Put(context.Background(), "accounts/"+user.Username, accountData)
 	if err != nil {
 		fmt.Println("Error storing account data in etcd:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to store account data in etcd: " + err.Error()})
@@ -151,25 +140,18 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	client, err := h.getClient()
-	if err != nil {
-		fmt.Println("Error getting etcd client:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to get etcd client: " + err.Error()})
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := client.Get(ctx, "users/"+credentials.Username)
-	if err != nil || resp.Count == 0 {
+	resp, err := h.db.Get(ctx, "users/"+credentials.Username)
+	if err != nil || resp == nil {
 		fmt.Println("Invalid credentials or error retrieving user data:", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
 	var user models.User
-	err = json.Unmarshal(resp.Kvs[0].Value, &user)
+	err = json.Unmarshal(resp, &user)
 	if err != nil {
 		fmt.Println("Error unmarshaling user data:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to unmarshal user data: " + err.Error()})

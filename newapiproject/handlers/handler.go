@@ -2,18 +2,12 @@ package handlers
 
 import (
 	"newapiprojet/database"
-
-	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 type Handler struct {
-	endpoints []string
+	db database.Database
 }
 
-func NewHandler(endpoints []string) *Handler {
-	return &Handler{endpoints: endpoints}
-}
-
-func (h *Handler) getClient() (*clientv3.Client, error) {
-	return database.GetClient(h.endpoints)
+func NewHandler(db database.Database) *Handler {
+	return &Handler{db: db}
 }

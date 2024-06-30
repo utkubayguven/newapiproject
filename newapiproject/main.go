@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"newapiprojet/adapter"
 	"newapiprojet/config"
+	"newapiprojet/etcd"
 	"newapiprojet/handlers"
 	"newapiprojet/middlewares"
 	"os"
@@ -12,22 +14,28 @@ import (
 	"github.com/joho/godotenv"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 func main() {
-	// .env dosyasını yükleyin
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error loading .env file")
 	}
-	//cli tool
-	endpoints := []string{
-		"http://etcd1:2379",
-		"http://etcd2:2378",
-		"http://etcd3:2377",
+
+	client, err := etcd.NewEtcdClient(clientv3.Config{
+		Endpoints: []string{
+			"http://etcd1:2379",
+			"http://etcd2:2378",
+			"http://etcd3:2377",
+		},
+	})
+	if err != nil {
+		panic(err)
 	}
-	// her handlerın ıcıne clıentı cagır adaptor pattern
-	//raft uygulaması
+	defer client.Close()
+
+	etcdAdapter := adapter.NewEtcdAdapter(client)
 
 	conf := config.GetConfig()
 
@@ -38,7 +46,7 @@ func main() {
 	r.Use(mw.LogMiddleware())
 	r.Use(middlewares.RequestLimitMiddleware())
 
-	h := handlers.NewHandler(endpoints)
+	h := handlers.NewHandler(etcdAdapter)
 
 	// User routes
 	secretKey := os.Getenv("JWT_SECRET")
@@ -52,7 +60,6 @@ func main() {
 	{
 		userRoutes.POST("/register", h.Register)
 		userRoutes.POST("/login", h.Login)
-
 	}
 
 	// Account routes

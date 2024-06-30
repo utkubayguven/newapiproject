@@ -25,7 +25,7 @@ import (
 // @Failure 404 {string} string "User not found"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /user/{id} [delete]
-func (h Handler) DeleteUser(c *gin.Context) {
+func (h *Handler) DeleteUser(c *gin.Context) {
 	userIDParam := c.Param("id") // Parametrelerden kullanıcı ID'sini al
 
 	if userIDParam == "" {
@@ -58,44 +58,37 @@ func (h Handler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	client, err := h.getClient()
-	if err != nil {
-		fmt.Println("Error getting etcd client:", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to get etcd client: " + err.Error()})
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := client.Get(ctx, "users/"+userUUID.String())
-	if err != nil || resp.Count == 0 {
+	resp, err := h.db.Get(ctx, "users/"+userUUID.String())
+	if err != nil || resp == nil {
 		fmt.Println("User not found or error retrieving user data:", err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
 	var user models.User
-	err = json.Unmarshal(resp.Kvs[0].Value, &user)
+	err = json.Unmarshal(resp, &user)
 	if err != nil {
 		fmt.Println("Error unmarshaling user data:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to unmarshal user data: " + err.Error()})
 		return
 	}
 
-	_, err = client.Delete(ctx, "users/"+userUUID.String())
+	err = h.db.Delete(ctx, "users/"+userUUID.String())
 	if err != nil {
 		fmt.Println("Error deleting user data from etcd:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to delete user data from etcd: " + err.Error()})
 		return
 	}
 
-	_, err = client.Delete(ctx, "accounts/"+userUUID.String())
+	err = h.db.Delete(ctx, "accounts/"+userUUID.String())
 	if err != nil {
 		fmt.Println("Error deleting account data from etcd:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to delete account data from etcd: " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusNoContent, nil) //
+	c.JSON(http.StatusNoContent, nil)
 }
