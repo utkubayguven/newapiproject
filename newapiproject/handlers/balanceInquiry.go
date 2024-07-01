@@ -25,34 +25,35 @@ import (
 // @Failure 403 {string} string "Forbidden"
 // @Router /balance/{accountID} [get]
 func (h Handler) GetAccountBalance(c *gin.Context) {
-	accountID := c.Param("accountID") // Parametrelerden hesap ID'sini al
+	accountID := c.Param("accountID")
 
-	// UUID olarak dönüştür
+	if accountID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Account ID cannot be empty"})
+		return
+	}
+
 	accountUUID, err := uuid.Parse(accountID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid account ID format"})
 		return
 	}
 
-	// JWT'den user_id'yi al
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Yetkilendirme hatası"})
 		return
 	}
 
-	// userID'yi UUID olarak kontrol et
 	userIDUUID, ok := userID.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID dönüştürme hatası"})
 		return
 	}
 
-	// etcd'den hesap bilgilerini al
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := h.db.Get(ctx, "accounts/"+accountUUID.String())
+	resp, err := h.db.Get(ctx, "accounts/username"+accountUUID.String())
 	if err != nil || resp == nil {
 		fmt.Println("Account not found or error retrieving account data:", err)
 		c.JSON(http.StatusNotFound, gin.H{"message": "Account not found"})
@@ -67,13 +68,11 @@ func (h Handler) GetAccountBalance(c *gin.Context) {
 		return
 	}
 
-	// Hesap bilgilerini al ve userID'yi kontrol et
 	if account.UserID != userIDUUID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Bu hesaba erişim izniniz yok"})
 		return
 	}
 
-	// Bakiye sorgulama işlemini kaydet
 	balanceInquiry := models.BalanceInquiry{
 		ID:             uuid.New(),
 		AccountID:      account.ID,

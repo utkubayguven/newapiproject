@@ -1,0 +1,4 @@
+kormu dusunce nasıl kaldırırız
+yenı bir etcd olusturabılır mıyzı etcdye mudahale edebılır mıyzı
+testlerı nasıl yapabılırız
+verılerım backup var kormum gıdınce patlatsa da node devam etmek ıstıyorum

@@ -59,7 +59,7 @@ func (h *Handler) Register(c *gin.Context) {
 
 	userData, err := json.Marshal(user)
 	if err != nil {
-		fmt.Println("Error marshaling user data:", err) // Log the error
+		fmt.Println("Error marshaling user data:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to marshal user data: " + err.Error()})
 		return
 	}
@@ -112,6 +112,8 @@ func (h *Handler) Register(c *gin.Context) {
 		"user":    user,
 		"account": account,
 	})
+
+	fmt.Println(user.ID, accountID)
 }
 
 type Claims struct {

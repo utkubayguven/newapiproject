@@ -66,7 +66,7 @@ func main() {
 	protected := r.Group("/account")
 	protected.Use(middlewares.AuthenticateJWT())
 	{
-		protected.GET("/balance/:accountNumber", h.GetAccountBalance)
+		protected.GET("/balance/:accountID", h.GetAccountBalance)
 		protected.POST("/withdrawal", h.Withdrawal)
 		protected.POST("/deposit", h.Deposit)
 		protected.POST("/pin-change/:id", h.PinChange)
