@@ -28,7 +28,7 @@ docker network create etcd-net8
 
 
 docker run -d \
-  --name etcd5\
+  --name fake-cluster\
   --net=host \
   -v /path/to/etcd/data:/etcd-data \
   quay.io/coreos/etcd:v3.5.14 \
@@ -41,3 +41,84 @@ docker run -d \
   --listen-client-urls http://localhost:2375 \
   --force-new-cluster
 
+
+docker run -d \
+  --name etcd-new4 \
+  --net=host \
+  -v /home/utku/Desktop/New\ Folder/newapiproject/newapiproject:/etcd-data \
+  quay.io/coreos/etcd:v3.5.14 \
+  /usr/local/bin/etcd \
+  --data-dir=/etcd-data \
+  --name etcd-new4 \
+  --initial-advertise-peer-urls http://localhost:2391 \
+  --listen-peer-urls http://localhost:2391 \
+  --advertise-client-urls http://localhost:2371 \
+  --listen-client-urls http://localhost:2371 \
+  --initial-cluster etcd-new=http://localhost:2391 \
+  --initial-cluster-state new \
+  --force-new-cluster \
+  --snapshot /etcd-data/snapshot.db
+
+sudo etcd --name node4 --initial-advertise-peer-urls http://localhost:2385 \
+     --listen-peer-urls http://localhost:2385 \
+     --listen-client-urls http://localhost:2373,http://127.0.0.1:2373 \
+     --advertise-client-urls http://localhost:2373 \
+     --initial-cluster <node-name>=http://localhost:2385 \
+     --initial-cluster-token etcd-cluster-1 \
+     --initial-cluster-state existing \
+     --force-new-cluster
+
+
+docker run -d --name etcd-single-node --net=host -v /path/to/etcd-data:/etcd-data quay.io/coreos/etcd:v3.5.14 \
+  /usr/local/bin/etcd --data-dir=/etcd-data --name etcd-single-node \
+  --initial-advertise-peer-urls http://localhost:2375 \
+  --listen-peer-urls http://localhost:2375 \
+  --advertise-client-urls http://localhost:2375 \
+  --listen-client-urls http://localhost:2375 \
+  --initial-cluster etcd-single-node=http://localhost:2375\
+  --initial-cluster-state new \
+  --force-new-cluster
+
+  docker run -d --name etcd-single-node2 --net=host -v /path/to/etcd-data:/etcd-data quay.io/coreos/etcd:v3.5.14 \
+  /usr/local/bin/etcd --data-dir=/etcd-data --name etcd-single-node \
+  --initial-advertise-peer-urls http://localhost:2374 \
+  --listen-peer-urls http://localhost:2374 \
+  --advertise-client-urls http://localhost:2374 \
+  --listen-client-urls http://localhost:2374 \
+  --initial-cluster etcd-single-node=http://localhost:2374 \
+  --initial-cluster-state new \
+  --force-new-cluster
+
+  
+$ etcdctl --endpoints=http://localhost:2380,http://localhost:2381,http://localhost:2382 endpoint status --write-out=json | jq .
+
+
+
+etcdctl --endpoints=http://localhost:2382 snapshot save /home/utku/Desktop/New\ Folder/newapiproject/newapiproject/snapshot.db
+
+  docker run -d \
+  --name etcd-new \
+  --net=host \
+  -v /home/utku/Desktop/New\ Folder/newapiproject/newapiproject:/etcd-data \
+  quay.io/coreos/etcd:v3.5.14 \
+  /usr/local/bin/etcd \
+  --data-dir=/etcd-data \
+  --name etcd-new \
+  --initial-advertise-peer-urls http://localhost:2382 \
+  --listen-peer-urls http://localhost:2382 \
+  --advertise-client-urls http://localhost:2377 \
+  --listen-client-urls http://localhost:2377 \
+  --initial-cluster etcd-new=http://localhost:2382 \
+  --initial-cluster-state new \
+  --force-new-cluster 
+
+  etcdctl snapshot restore /home/utku/Desktop/New\ Folder/newapiproject/newapiproject/snapshot.db \
+  --data-dir=/home/utku/Desktop/New\ Folder/newapiproject/newapiproject/etcd-data \
+  --initial-cluster etcd-new=http://localhost:2382 \
+  --initial-advertise-peer-urls http://localhost:2382 \
+  --name etcd-new
+
+
+
+
+new
